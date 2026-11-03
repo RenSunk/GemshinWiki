@@ -848,3 +848,150 @@ select {
     max-width: 80px;
   }
 }
+
+/* ---------- Copia de seguridad ---------- */
+.boton-secundario {
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+}
+.boton-secundario:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.respaldo {
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid var(--borde);
+}
+.respaldo h2 {
+  color: var(--texto-fuerte);
+  font-size: 1.1rem;
+  margin: 0;
+}
+.respaldo-botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.respaldo-botones > * {
+  margin-top: 0;
+}
+.respaldo-mensaje {
+  font-size: 0.9rem;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid;
+}
+.respaldo-mensaje.ok {
+  color: #7ec98f;
+  border-color: color-mix(in srgb, #7ec98f 40%, transparent);
+}
+.respaldo-mensaje.error {
+  color: #e8a87c;
+  border-color: color-mix(in srgb, #e8a87c 40%, transparent);
+}
+.importar {
+  max-width: 640px;
+}
+
+/* ---------- Hoy ---------- */
+.dias {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+  margin: 16px 0;
+}
+.dias button {
+  background: var(--fondo-2);
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  padding: 8px 2px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.2;
+}
+.dias button small {
+  font-size: 0.65rem;
+  color: var(--dorado);
+}
+.dias button.es-hoy {
+  border-color: color-mix(in srgb, var(--dorado) 50%, var(--borde));
+}
+.dias button.activo {
+  background: var(--dorado);
+  color: #15161f;
+  font-weight: 700;
+}
+.dias button.activo small {
+  color: #15161f;
+}
+.hoy-subtitulo {
+  color: var(--texto-fuerte);
+  font-size: 1.1rem;
+  margin: 24px 0 12px;
+}
+.dominios {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
+  gap: 14px;
+}
+.tarjeta-dominio {
+  background: var(--fondo-2);
+  border: 1px solid var(--borde);
+  border-left: 3px solid var(--dorado);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.tarjeta-dominio h3 {
+  margin: 2px 0 4px;
+  color: var(--texto-fuerte);
+  font-size: 1.05rem;
+}
+.tarjeta-dominio .habilidad-tipo {
+  color: var(--dorado);
+}
+.tarjeta-dominio .materiales {
+  grid-template-columns: 1fr;
+}
+.otros-dominios {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: 8px;
+}
+.otros-dominios li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--fondo-2);
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  padding: 8px 12px;
+  opacity: 0.85;
+}
+.otros-dominios-iconos {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.otros-dominios-iconos .material-icono {
+  width: 30px;
+  height: 30px;
+}
+
+/* Con 4 enlaces, en el celular el menú ocupa su propia fila y se compacta */
+@media (max-width: 520px) {
+  .menu {
+    width: 100%;
+    justify-content: space-between;
+    gap: 2px;
+  }
+  .menu a {
+    padding: 5px 7px;
+    font-size: 0.9rem;
+  }
+}

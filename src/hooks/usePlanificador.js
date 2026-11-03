@@ -38,6 +38,13 @@ export function usePlanificador() {
 
   const vaciarInventario = () => setInventario({})
 
+  // Reemplaza todo con lo que viene de una copia de seguridad (ya validada con leerRespaldo)
+  const restaurar = (respaldo) => {
+    setPlanes(respaldo.planes)
+    setInventario(respaldo.inventario)
+    setAlquimia(respaldo.alquimia)
+  }
+
   return {
     planes,
     estaEnPlan,
@@ -50,5 +57,6 @@ export function usePlanificador() {
     vaciarInventario,
     alquimia,
     setAlquimia,
+    restaurar,
   }
 }

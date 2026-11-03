@@ -145,6 +145,17 @@ for (const nombreIngles of genshindb.crafts('names', { matchCategories: true }))
   recetas[resultado.id] = { de: ingrediente.id, cantidad: ingrediente.count, mora: receta.moraCost ?? 0 }
 }
 
+// ---------- Dominios ----------
+// Los materiales traen el nombre del nivel ("Dominio de la maestría: Aro de fuego"); para la web
+// sirve más la entrada que se ve en el mapa ("Mansión Taishan") y su región
+const dominiosPorId = new Map(
+  genshindb
+    .domains('names', { matchCategories: true })
+    .map((nombre) => genshindb.domains(nombre, ES))
+    .filter(Boolean)
+    .map((d) => [d.id, { entrada: d.entranceName, region: d.regionName }]),
+)
+
 // ---------- Materiales ----------
 const todosLosMateriales = genshindb.materials('names', { ...ES, matchCategories: true, verboseCategories: true })
 const materiales = {}
@@ -157,6 +168,7 @@ for (const m of todosLosMateriales) {
     orden: m.sortRank ?? 0,
     icono: `${IMG_MATERIALES}/${m.images.filename_icon}.png`,
     ...(m.daysOfWeek && { dias: m.daysOfWeek }),
+    ...(dominiosPorId.has(m.dropDomainId) && { dominio: dominiosPorId.get(m.dropDomainId) }),
     ...(recetas[m.id] && { receta: recetas[m.id] }),
   }
 }

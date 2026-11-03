@@ -6,10 +6,13 @@ import GaleriaArmas from './components/GaleriaArmas.jsx'
 import DetallePersonaje from './components/DetallePersonaje.jsx'
 import DetalleArma from './components/DetalleArma.jsx'
 import Planificador from './components/Planificador.jsx'
+import Hoy from './components/Hoy.jsx'
+import ImportarEnlace from './components/ImportarEnlace.jsx'
 import { usePlanificador } from './hooks/usePlanificador.js'
 
 // Navegación sencilla con el hash de la URL:
-// #/, #/personaje/hu-tao, #/armas, #/arma/staff-of-homa, #/planificador, #/planificador/arma/staff-of-homa
+// #/, #/personaje/hu-tao, #/armas, #/arma/staff-of-homa, #/hoy, #/planificador,
+// #/planificador/arma/staff-of-homa, #/importar/<copia del plan>
 function leerRuta() {
   const [, seccion = '', ...resto] = window.location.hash.split('/')
   return { seccion, resto }
@@ -21,7 +24,8 @@ const claveDelPlanificador = (resto) => (resto.length === 2 ? resto.join('/') : 
 const MENU = [
   { href: '#/', texto: 'Personajes', secciones: ['', 'personaje'] },
   { href: '#/armas', texto: 'Armas', secciones: ['armas', 'arma'] },
-  { href: '#/planificador', texto: 'Planificador', secciones: ['planificador'] },
+  { href: '#/hoy', texto: 'Hoy', secciones: ['hoy'] },
+  { href: '#/planificador', texto: 'Planificador', secciones: ['planificador', 'importar'] },
 ]
 
 export default function App() {
@@ -46,6 +50,10 @@ export default function App() {
     pagina = <DetallePersonaje key={personaje.slug} personaje={personaje} planificador={planificador} />
   } else if (arma) {
     pagina = <DetalleArma key={arma.slug} arma={arma} planificador={planificador} />
+  } else if (seccion === 'hoy') {
+    pagina = <Hoy personajes={personajes} armas={armas} planificador={planificador} />
+  } else if (seccion === 'importar') {
+    pagina = <ImportarEnlace codigo={resto[0] ?? ''} planificador={planificador} />
   } else if (seccion === 'armas') {
     pagina = <GaleriaArmas armas={armas} />
   } else if (seccion === 'planificador') {

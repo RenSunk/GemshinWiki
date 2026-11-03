@@ -1,14 +1,9 @@
-import { useMemo, useState } from 'react'
-import {
-  NIVELES,
-  NOMBRES_TALENTOS,
-  calcularPlan,
-  nivelesDisponibles,
-  repartirInventario,
-  sumarTotales,
-} from '../utils/calculos.js'
+import { useState } from 'react'
+import { NIVELES, NOMBRES_TALENTOS, nivelesDisponibles, repartirInventario, sumarTotales } from '../utils/calculos.js'
 import { claveDe, tipoDe } from '../hooks/usePlanificador.js'
+import { usePlanCalculado } from '../hooks/usePlanCalculado.js'
 import ListaMateriales from './ListaMateriales.jsx'
+import Respaldo from './Respaldo.jsx'
 
 const NIVELES_TALENTO = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 const VISTAS = { separado: 'Por separado', total: 'Todo junto' }
@@ -21,21 +16,8 @@ export default function Planificador({ personajes, armas, planificador, claveIni
   const [vista, setVista] = useState('separado')
   const [ocultarCompletos, setOcultarCompletos] = useState(false)
 
-  const catalogo = useMemo(
-    () => ({
-      personaje: new Map(personajes.map((p) => [p.slug, p])),
-      arma: new Map(armas.map((a) => [a.slug, a])),
-    }),
-    [personajes, armas],
-  )
-  const entidadDe = (plan) => catalogo[tipoDe(plan)].get(plan.slug)
-
-  // Ignora planes guardados cuyo personaje o arma ya no exista en los datos
-  const planes = planificador.planes.filter((plan) => entidadDe(plan))
+  const { catalogo, entidadDe, planes, necesidades, repartos } = usePlanCalculado(personajes, armas, planificador)
   const enPlan = new Set(planes.map(claveDe))
-
-  const necesidades = planes.map((plan) => calcularPlan(entidadDe(plan), plan))
-  const repartos = repartirInventario(necesidades, inventario, { alquimia })
 
   // Si no hay ninguno abierto (o se quitó), se muestra el último añadido
   const indiceAbierto = enPlan.has(abierto) ? planes.findIndex((p) => claveDe(p) === abierto) : planes.length - 1
@@ -185,6 +167,8 @@ export default function Planificador({ personajes, armas, planificador, claveIni
           )}
         </>
       )}
+
+      <Respaldo planificador={planificador} />
     </section>
   )
 }
