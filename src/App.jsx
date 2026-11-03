@@ -39,7 +39,7 @@ export default function App() {
     <>
       <header className="cabecera">
         <a href="#/" className="logo">
-          <span className="logo-estrella">✦</span> Teyvat Wiki
+          <span className="logo-estrella">✦</span> Genshin Wiki
         </a>
         <nav className="menu">
           <a href="#/" className={ruta.seccion !== 'planificador' ? 'activo' : ''}>

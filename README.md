@@ -1,4 +1,6 @@
-# Teyvat Wiki
+# Genshin Wiki
+
+https://genshin-wiki.vercel.app
 
 Enciclopedia de personajes y planificador de materiales de Genshin Impact, hecho por fans (React + Vite).
 
