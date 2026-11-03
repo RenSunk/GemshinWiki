@@ -995,3 +995,74 @@ select {
     font-size: 0.9rem;
   }
 }
+
+/* ---------- Artefactos ---------- */
+.detalle-hero-artefacto {
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 24px;
+}
+.artefacto-icono-grande {
+  width: 220px;
+  aspect-ratio: 1;
+  border-radius: 20px;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+.artefacto-icono-grande img {
+  width: 88%;
+}
+.datos .dato-ancho {
+  grid-column: 1 / -1;
+}
+.piezas {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: 10px;
+}
+.piezas li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--fondo-2);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+.piezas img {
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+/* Con 5 enlaces, la cabecera pasa a dos filas si no cabe y en el celular el menú se desplaza de lado */
+.cabecera {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+@media (max-width: 760px) {
+  .detalle-hero-artefacto {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+  .artefacto-icono-grande {
+    width: 160px;
+  }
+}
+@media (max-width: 520px) {
+  .menu {
+    overflow-x: auto;
+    justify-content: flex-start;
+    scrollbar-width: none;
+  }
+  .menu::-webkit-scrollbar {
+    display: none;
+  }
+  .menu a {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+}

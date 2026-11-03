@@ -2,7 +2,7 @@
 
 https://genshin-wiki.vercel.app
 
-Enciclopedia de personajes y armas, y planificador de materiales de Genshin Impact, hecho por fans (React + Vite).
+Enciclopedia de personajes, armas y artefactos, y planificador de materiales de Genshin Impact, hecho por fans (React + Vite).
 
 ## Comandos
 
@@ -19,8 +19,9 @@ Cada `git push` a `main` se publica solo en Vercel.
 
 - `scripts/generar-datos.mjs` lee el paquete `genshin-db` (179 MB, todos los idiomas) y guarda
   solo lo que usa la web, en español, en `src/data/`:
-  `personajes.json`, `armas.json`, `materiales.json` (con las recetas de alquimia) y
-  `armas-historias.json` (se descarga aparte, solo al abrir la historia de un arma).
+  `personajes.json`, `armas.json`, `artefactos.json`, `materiales.json` (con las recetas de alquimia), y
+  `armas-historias.json` y `artefactos-historias.json` (se descargan aparte, solo al abrir una historia).
+- El dominio de cada set de artefactos sale de las recompensas de los dominios de artefactos.
 - Cuando salga una versión nueva del juego: `npm update genshin-db && npm run datos`.
 - Imágenes de personajes y armas: Enka.Network. Iconos de materiales: gi.yatta.moe (Enka no tiene los más nuevos).
 - Las tablas de EXP por nivel (personajes y armas por rareza) no vienen en genshin-db; están en
@@ -45,13 +46,16 @@ mano: si el juego cambiara la rotación, basta con `npm update genshin-db && npm
 
 ```
 src/
-  App.jsx                          navegación (#/, #/personaje/<slug>, #/armas, #/arma/<slug>, #/hoy,
+  App.jsx                          navegación (#/, #/personaje/<slug>, #/armas, #/arma/<slug>,
+                                   #/artefactos, #/artefacto/<slug>, #/hoy,
                                    #/planificador/<personaje|arma>/<slug>, #/importar/<datos>)
   components/Galeria.jsx           personajes: buscador y filtros
   components/GaleriaArmas.jsx      armas: buscador y filtros
   components/Tarjeta.jsx           tarjeta de las galerías
   components/DetallePersonaje.jsx  talentos, constelaciones y materiales
   components/DetalleArma.jsx       stats, efecto por refinamiento, historia y materiales
+  components/GaleriaArtefactos.jsx sets de artefactos: búsqueda por nombre o por texto de los bonos
+  components/DetalleArtefacto.jsx  bonos, dónde conseguirlo, piezas e historia
   components/Planificador.jsx      niveles objetivo de personajes y armas
   components/ListaMateriales.jsx   materiales agrupados con iconos (y campos "Tengo" en el planificador)
   components/Hoy.jsx               qué dominios hacer cada día

@@ -133,6 +133,54 @@ const armas = nombresArmas.map((nombreIngles) => {
 })
 armas.sort((a, b) => b.rareza - a.rareza || a.nombre.localeCompare(b.nombre, 'es'))
 
+// ---------- Artefactos ----------
+// Dominio de cada set: las recompensas de los dominios de artefactos nombran los sets que dan
+const dominiosDeArtefactos = genshindb
+  .domains('names', { matchCategories: true })
+  .map((nombre) => genshindb.domains(nombre, ES))
+  .filter((d) => d?.domainType === 'UI_ABYSSUS_RELIC')
+
+function dominiosDelSet(nombreSet) {
+  const entradas = new Map()
+  for (const d of dominiosDeArtefactos) {
+    if (d.rewardPreview?.some((r) => r.name === nombreSet)) {
+      entradas.set(d.entranceName, { entrada: d.entranceName, region: d.regionName })
+    }
+  }
+  return [...entradas.values()].sort((a, b) => a.region.localeCompare(b.region, 'es'))
+}
+
+const PIEZAS = ['flower', 'plume', 'sands', 'goblet', 'circlet']
+const historiasArtefactos = {}
+const artefactos = genshindb.artifacts('names', { matchCategories: true }).map((nombreIngles) => {
+  const s = genshindb.artifacts(nombreIngles, ES)
+  const slug = aSlug(nombreIngles)
+  const piezas = PIEZAS.filter((p) => s[p])
+
+  historiasArtefactos[slug] = piezas.map((p) => ({ descripcion: s[p].description, historia: s[p].story ?? '' }))
+
+  return {
+    id: s.id,
+    slug,
+    nombre: s.name,
+    rarezas: [Math.min(...s.rarityList), Math.max(...s.rarityList)],
+    version: s.version,
+    bonos: [
+      s.effect1Pc && { piezas: 1, texto: s.effect1Pc },
+      s.effect2Pc && { piezas: 2, texto: s.effect2Pc },
+      s.effect4Pc && { piezas: 4, texto: s.effect4Pc },
+    ].filter(Boolean),
+    dominios: dominiosDelSet(s.name),
+    icono: `${IMG}/${s.images[`filename_${piezas[0]}`]}.png`,
+    piezas: piezas.map((p) => ({
+      tipo: s[p].relicText,
+      nombre: s[p].name,
+      icono: `${IMG}/${s.images[`filename_${p}`]}.png`,
+    })),
+  }
+})
+artefactos.sort((a, b) => b.rarezas[1] - a.rarezas[1] || a.nombre.localeCompare(b.nombre, 'es'))
+
 // ---------- Recetas de alquimia (3 de un nivel → 1 del siguiente) ----------
 const recetas = {}
 for (const nombreIngles of genshindb.crafts('names', { matchCategories: true })) {
@@ -180,8 +228,11 @@ mkdirSync('src/data', { recursive: true })
 writeFileSync('src/data/personajes.json', JSON.stringify(personajes))
 writeFileSync('src/data/armas.json', JSON.stringify(armas))
 writeFileSync('src/data/armas-historias.json', JSON.stringify(historias))
+writeFileSync('src/data/artefactos.json', JSON.stringify(artefactos))
+writeFileSync('src/data/artefactos-historias.json', JSON.stringify(historiasArtefactos))
 writeFileSync('src/data/materiales.json', JSON.stringify(materiales))
 console.log(
-  `Listo: ${personajes.length} personajes, ${armas.length} armas, ${Object.keys(materiales).length} materiales ` +
+  `Listo: ${personajes.length} personajes, ${armas.length} armas, ${artefactos.length} sets de artefactos, ` +
+    `${Object.keys(materiales).length} materiales ` +
     `(${Object.keys(recetas).length} con receta) en src/data/`,
 )
