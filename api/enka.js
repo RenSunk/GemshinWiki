@@ -7,6 +7,8 @@
 const ENKA = 'https://enka.network/api/uid'
 // Enka pide identificar las aplicaciones que usan su API
 const USER_AGENT = 'GenshinWiki/1.0 (+https://genshin-wiki.vercel.app)'
+// Enka a veces se queda sin responder: mejor cortar y avisar que dejar la página esperando
+const ESPERA_MAXIMA_MS = 10000
 
 const MENSAJES = {
   400: 'Ese UID no es válido.',
@@ -15,6 +17,7 @@ const MENSAJES = {
   429: 'Demasiadas consultas seguidas. Espera un minuto y vuelve a intentarlo.',
   500: 'Enka.Network tuvo un error. Prueba más tarde.',
   503: 'Enka.Network no está disponible ahora mismo. Prueba más tarde.',
+  504: 'Enka.Network está tardando demasiado en responder. Prueba de nuevo en un momento.',
 }
 
 function responder(res, estado, datos, segundosCache = 0) {
@@ -67,16 +70,23 @@ export default async function handler(req, res) {
   if (!/^\d{9,10}$/.test(uid)) return responder(res, 400, { error: MENSAJES[400] })
 
   let respuesta
+  let datos
   try {
-    respuesta = await fetch(`${ENKA}/${uid}/`, { headers: { 'User-Agent': USER_AGENT } })
-  } catch {
-    return responder(res, 503, { error: MENSAJES[503] })
+    respuesta = await fetch(`${ENKA}/${uid}/`, {
+      headers: { 'User-Agent': USER_AGENT },
+      signal: AbortSignal.timeout(ESPERA_MAXIMA_MS),
+    })
+    if (respuesta.ok) datos = await respuesta.json()
+  } catch (error) {
+    const agotado = error.name === 'TimeoutError'
+    return responder(res, agotado ? 504 : 503, { error: MENSAJES[agotado ? 504 : 503] })
   }
 
   if (!respuesta.ok) {
-    return responder(res, respuesta.status, { error: MENSAJES[respuesta.status] ?? MENSAJES[500] })
+    // Errores de Cloudflare (52x) u otros desconocidos: se devuelven como 502 con un mensaje general
+    const conocido = MENSAJES[respuesta.status]
+    return responder(res, conocido ? respuesta.status : 502, { error: conocido ?? MENSAJES[500] })
   }
 
-  const datos = await respuesta.json()
   return responder(res, 200, resumir(datos), Math.max(0, Math.min(datos.ttl ?? 60, 300)))
 }

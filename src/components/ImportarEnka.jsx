@@ -23,16 +23,21 @@ export default function ImportarEnka({ personajes, armas, planificador }) {
     }
     setEstado({ cargando: true, error: null, datos: null })
     setImportados(new Set())
+    let respuesta
     try {
-      const respuesta = await fetch(`/api/enka?uid=${limpio}`)
-      const datos = await respuesta.json()
-      if (!respuesta.ok) throw new Error(datos.error ?? 'No se pudo consultar Enka.Network.')
-      setUidGuardado(limpio)
-      setEstado({ cargando: false, error: null, datos })
-    } catch (error) {
-      const sinConexion = error instanceof TypeError
-      setEstado({ cargando: false, error: sinConexion ? 'Sin conexión. Revisa tu internet.' : error.message, datos: null })
+      respuesta = await fetch(`/api/enka?uid=${limpio}`)
+    } catch {
+      setEstado({ cargando: false, error: 'Sin conexión. Revisa tu internet.', datos: null })
+      return
     }
+    // Si algo falla antes de llegar a la función (p. ej. un error del servidor), puede no venir JSON
+    const datos = await respuesta.json().catch(() => null)
+    if (!respuesta.ok || !datos) {
+      setEstado({ cargando: false, error: datos?.error ?? 'No se pudo consultar Enka.Network. Prueba de nuevo en un momento.', datos: null })
+      return
+    }
+    setUidGuardado(limpio)
+    setEstado({ cargando: false, error: null, datos })
   }
 
   // Detalles de la vitrina convertidos a nuestros datos (se ignora lo que no esté en genshin-db)
