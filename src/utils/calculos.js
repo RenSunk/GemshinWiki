@@ -61,7 +61,18 @@ export const NIVELES = [
 // Las armas de 1-2★ solo llegan al nivel 70 (4 ascensiones)
 export const nivelesDisponibles = (entidad) => NIVELES.filter((n) => n.fase <= entidad.costesAscension.length)
 
-export const NOMBRES_TALENTOS = ['Ataque normal', 'Habilidad elemental', 'Habilidad definitiva']
+// Opción de NIVELES que corresponde a un nivel y fase de ascensión reales del juego. Como el planificador
+// solo tiene los niveles de corte (20, 40, 50…), se toma el más alto que no supera el real con esa fase:
+// un personaje a nivel 63 con 4 ascensiones queda en "60/70".
+export function nivelDesdeJuego(nivel, fase) {
+  let indice = 0
+  NIVELES.forEach((n, i) => {
+    if (n.fase === fase && n.nivel <= nivel) indice = i
+  })
+  return indice
+}
+
+export const NOMBRES_TALENTOS =['Ataque normal', 'Habilidad elemental', 'Habilidad definitiva']
 
 export const nuevoPlan = (tipo, entidad) => ({
   tipo,

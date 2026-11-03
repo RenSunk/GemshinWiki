@@ -40,6 +40,18 @@ Cada `git push` a `main` se publica solo en Vercel.
 - «Copia de seguridad» exporta el plan como archivo o como enlace (`#/importar/<datos>`) para pasarlo a
   otro dispositivo. Al importar se valida todo y se pide confirmación antes de reemplazar.
 
+## Importar desde Enka.Network
+
+`#/enka` lee la vitrina del perfil de un jugador (por UID) y pasa sus personajes y armas al planificador
+con los niveles y talentos reales.
+
+- La API de Enka no permite llamadas desde el navegador (CORS), así que pasa por la función de servidor
+  `api/enka.js` (Vercel la publica en `/api/enka?uid=…`). Se identifica con un User-Agent propio, como pide
+  Enka, devuelve solo los campos que usa la web y respeta su tiempo de caché.
+- En local, `vite dev` y `vite preview` sirven esa misma función con un middleware (`vite.config.js`).
+- Los niveles de talento vienen por id de habilidad; el orden [ataque normal, habilidad, definitiva] de cada
+  personaje se guarda en `ordenTalentos` desde la documentación de Enka (`npm run datos` lo descarga).
+
 ## Hoy
 
 `#/hoy` muestra qué dominios de talentos y de armas conviene hacer cada día según lo que le falta al plan.
@@ -67,10 +79,12 @@ calculadora exacta de la probabilidad de conseguir N copias con X tiradas (`util
 ## Estructura
 
 ```
+api/
+  enka.js                          función de servidor: consulta Enka.Network por UID
 src/
   App.jsx                          navegación (#/, #/personaje/<slug>, #/armas, #/arma/<slug>,
                                    #/artefactos, #/artefacto/<slug>, #/equipos/<slugs>, #/gachapon, #/hoy,
-                                   #/planificador/<personaje|arma>/<slug>, #/importar/<datos>)
+                                   #/planificador/<personaje|arma>/<slug>, #/importar/<datos>, #/enka)
   components/Galeria.jsx           personajes: buscador y filtros
   components/GaleriaArmas.jsx      armas: buscador y filtros
   components/Tarjeta.jsx           tarjeta de las galerías
@@ -86,6 +100,7 @@ src/
   components/Hoy.jsx               qué dominios hacer cada día
   components/Respaldo.jsx          exportar e importar el plan
   components/ImportarEnlace.jsx    página que abre un enlace de copia
+  components/ImportarEnka.jsx      importar la vitrina de un UID al planificador
   hooks/usePlanificador.js         plan, inventario y opción de alquimia
   hooks/usePlanCalculado.js        necesidades y reparto del inventario (planificador y Hoy)
   hooks/useAlmacenado.js           useState que se guarda en localStorage

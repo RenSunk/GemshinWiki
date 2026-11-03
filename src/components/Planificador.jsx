@@ -74,6 +74,10 @@ export default function Planificador({ personajes, armas, planificador, claveIni
           Añadir
         </button>
       </form>
+      <p className="nota">
+        ¿Tienes tus personajes en la vitrina del perfil del juego?{' '}
+        <a href="#/enka">Impórtalos con sus niveles desde Enka.Network</a>.
+      </p>
 
       {planes.length === 0 ? (
         <p className="vacio">

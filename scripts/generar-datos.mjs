@@ -16,6 +16,14 @@ const ELEMENTOS_VALIDOS = ['Pyro', 'Hydro', 'Anemo', 'Electro', 'Dendro', 'Cryo'
 // ningún coste los nombre directamente
 const IDS_EXP = [104003, 104002, 104001, 104013, 104012, 104011]
 
+// Orden de los talentos según Enka.Network: SkillOrder = [ataque normal, habilidad elemental, definitiva].
+// Sirve para leer los niveles de talento que devuelve su API (vienen por id de habilidad).
+const ENKA_PERSONAJES = 'https://raw.githubusercontent.com/EnkaNetwork/API-docs/master/store/gi/avatars.json'
+const enkaPersonajes = await fetch(ENKA_PERSONAJES).then((r) => {
+  if (!r.ok) throw new Error(`No se pudo descargar ${ENKA_PERSONAJES} (${r.status})`)
+  return r.json()
+})
+
 const aSlug = (nombreIngles) => nombreIngles.toLowerCase().replace(/[^a-z0-9]+/g, '-')
 
 // Los costes se guardan como pares [id, cantidad] para que el JSON pese menos.
@@ -74,6 +82,8 @@ const personajes = genshindb.characters('names', { matchCategories: true }).map(
     // costesAscension[0] = fase 1 … [5] = fase 6
     costesAscension: ['ascend1', 'ascend2', 'ascend3', 'ascend4', 'ascend5', 'ascend6'].map((f) => compactar(c.costs?.[f])),
     // costesTalento[0] = subir de nivel 1 a 2 … [8] = de 9 a 10 (igual para los 3 talentos)
+    // ids de habilidad de Enka para [ataque normal, habilidad elemental, definitiva]
+    ordenTalentos: enkaPersonajes[c.id]?.SkillOrder ?? [],
     costesTalento: t?.costs
       ? ['lvl2', 'lvl3', 'lvl4', 'lvl5', 'lvl6', 'lvl7', 'lvl8', 'lvl9', 'lvl10'].map((n) => compactar(t.costs[n]))
       : [],

@@ -17,6 +17,24 @@ export function usePlanificador() {
     if (!estaEnPlan(tipo, entidad.slug)) setPlanes([...planes, nuevoPlan(tipo, entidad)])
   }
 
+  // Añade o actualiza varios planes con los niveles reales del juego (importados de Enka.Network).
+  // `actuales`: [{ tipo, entidad, nivelActual, talentos? }] con talentos = [na, habilidad, definitiva].
+  // Si ya estaba en el plan, se actualiza lo actual y los objetivos solo suben si quedan por debajo.
+  const importarNiveles = (actuales) => {
+    let nuevos = [...planes]
+    for (const { tipo, entidad, nivelActual, talentos } of actuales) {
+      const clave = `${tipo}/${entidad.slug}`
+      const indice = nuevos.findIndex((p) => claveDe(p) === clave)
+      const base = indice >= 0 ? nuevos[indice] : nuevoPlan(tipo, entidad)
+      const plan = { ...base, nivelActual, nivelObjetivo: Math.max(base.nivelObjetivo, nivelActual) }
+      if (base.talentos && talentos) {
+        plan.talentos = base.talentos.map(([, objetivo], i) => [talentos[i], Math.max(objetivo, talentos[i])])
+      }
+      nuevos = indice >= 0 ? nuevos.map((p, i) => (i === indice ? plan : p)) : [...nuevos, plan]
+    }
+    setPlanes(nuevos)
+  }
+
   const quitar = (clave) => setPlanes(planes.filter((p) => claveDe(p) !== clave))
 
   const actualizar = (clave, cambios) => setPlanes(planes.map((p) => (claveDe(p) === clave ? { ...p, ...cambios } : p)))
@@ -49,6 +67,7 @@ export function usePlanificador() {
     planes,
     estaEnPlan,
     agregar,
+    importarNiveles,
     quitar,
     actualizar,
     mover,
