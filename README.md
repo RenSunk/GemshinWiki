@@ -2,7 +2,7 @@
 
 https://genshin-wiki.vercel.app
 
-Enciclopedia de personajes y planificador de materiales de Genshin Impact, hecho por fans (React + Vite).
+Enciclopedia de personajes y armas, y planificador de materiales de Genshin Impact, hecho por fans (React + Vite).
 
 ## Comandos
 
@@ -13,27 +13,42 @@ npm run datos    # regenerar src/data/ desde genshin-db
 npm run build    # versión de producción en dist/
 ```
 
+Cada `git push` a `main` se publica solo en Vercel.
+
 ## Cómo funciona
 
 - `scripts/generar-datos.mjs` lee el paquete `genshin-db` (179 MB, todos los idiomas) y guarda
-  solo lo que usa la web, en español, en `src/data/personajes.json` y `src/data/materiales.json`.
+  solo lo que usa la web, en español, en `src/data/`:
+  `personajes.json`, `armas.json`, `materiales.json` (con las recetas de alquimia) y
+  `armas-historias.json` (se descarga aparte, solo al abrir la historia de un arma).
 - Cuando salga una versión nueva del juego: `npm update genshin-db && npm run datos`.
-- Imágenes de personajes: Enka.Network. Iconos de materiales: gi.yatta.moe (Enka no tiene los más nuevos).
-- La tabla de experiencia por nivel no viene en genshin-db; está en `src/utils/calculos.js`.
+- Imágenes de personajes y armas: Enka.Network. Iconos de materiales: gi.yatta.moe (Enka no tiene los más nuevos).
+- Las tablas de EXP por nivel (personajes y armas por rareza) no vienen en genshin-db; están en
+  `src/utils/calculos.js`, sacadas de los datos del juego.
+
+## Planificador
+
+- La EXP se cuenta en puntos: el inventario guarda cuántos libros (20 000 / 5000 / 1000) o
+  minerales (10 000 / 2000 / 400) tienes.
+- El inventario se reparte en el orden de prioridad de la lista.
+- Con «Usar alquimia», lo que falta se fabrica con 3 del nivel inferior que sobren, sumando su coste en mora.
 
 ## Estructura
 
 ```
 src/
-  App.jsx                          navegación (#/, #/personaje/<slug>, #/planificador)
-  components/Galeria.jsx           buscador y filtros
-  components/TarjetaPersonaje.jsx
+  App.jsx                          navegación (#/, #/personaje/<slug>, #/armas, #/arma/<slug>,
+                                   #/planificador/<personaje|arma>/<slug>)
+  components/Galeria.jsx           personajes: buscador y filtros
+  components/GaleriaArmas.jsx      armas: buscador y filtros
+  components/Tarjeta.jsx           tarjeta de las galerías
   components/DetallePersonaje.jsx  talentos, constelaciones y materiales
-  components/Planificador.jsx      niveles objetivo por personaje y total de materiales
-  components/ListaMateriales.jsx   materiales agrupados con iconos (y campo "Tengo" en el planificador)
-  hooks/usePlanificador.js         plan e inventario
+  components/DetalleArma.jsx       stats, efecto por refinamiento, historia y materiales
+  components/Planificador.jsx      niveles objetivo de personajes y armas
+  components/ListaMateriales.jsx   materiales agrupados con iconos (y campos "Tengo" en el planificador)
+  hooks/usePlanificador.js         plan, inventario y opción de alquimia
   hooks/useAlmacenado.js           useState que se guarda en localStorage
-  utils/calculos.js                costes de ascensión, EXP y talentos
+  utils/calculos.js                costes de ascensión, EXP, talentos, reparto del inventario y alquimia
   utils/constantes.js              colores de elementos, listas de armas y regiones
 ```
 

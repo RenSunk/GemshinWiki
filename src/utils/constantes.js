@@ -14,3 +14,6 @@ export const ARMAS = ['Espada ligera', 'Mandoble', 'Lanza', 'Arco', 'Catalizador
 export const REGIONES = ['Mondstadt', 'Liyue', 'Inazuma', 'Sumeru', 'Fontaine', 'Natlan', 'Nod Krai', 'Snezhnaya', 'Desconocida']
 
 export const formatearNumero = (n) => n.toLocaleString('es')
+
+// Quita tildes para que "citlali" encuentre a "Citlalí"
+export const normalizar = (texto) => texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()

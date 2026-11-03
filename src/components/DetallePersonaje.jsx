@@ -8,7 +8,7 @@ const PESTANAS = ['Talentos', 'Constelaciones', 'Materiales']
 export default function DetallePersonaje({ personaje: p, planificador }) {
   const [pestana, setPestana] = useState(PESTANAS[0])
   const color = COLORES_ELEMENTO[p.elemento]
-  const enPlan = planificador.estaEnPlan(p.slug)
+  const enPlan = planificador.estaEnPlan('personaje', p.slug)
 
   const datos = [
     ['Elemento', p.elemento],
@@ -35,11 +35,11 @@ export default function DetallePersonaje({ personaje: p, planificador }) {
           <p className="estrellas">{'★'.repeat(p.rareza)}</p>
           <p className="detalle-descripcion">{p.descripcion}</p>
           {enPlan ? (
-            <a href={`#/planificador/${p.slug}`} className="boton-secundario">
+            <a href={`#/planificador/personaje/${p.slug}`} className="boton-secundario">
               ✓ En el planificador
             </a>
           ) : (
-            <button className="boton-principal" onClick={() => planificador.agregar(p.slug)}>
+            <button className="boton-principal" onClick={() => planificador.agregar('personaje', p)}>
               + Añadir al planificador
             </button>
           )}
@@ -102,7 +102,7 @@ function Materiales({ personaje }) {
         Total para subir del nivel 1 al 90{talentosAlMaximo && ' y los 3 talentos del 1 al 10'}. Para
         calcular niveles concretos, usa el <a href="#/planificador">planificador</a>.
       </p>
-      <ListaMateriales totales={calcularPlan(personaje, nuevoPlan(personaje.slug))} />
+      <ListaMateriales totales={calcularPlan(personaje, nuevoPlan('personaje', personaje))} />
     </div>
   )
 }

@@ -1,15 +1,28 @@
 import { useEffect, useState } from 'react'
 import personajes from './data/personajes.json'
+import armas from './data/armas.json'
 import Galeria from './components/Galeria.jsx'
+import GaleriaArmas from './components/GaleriaArmas.jsx'
 import DetallePersonaje from './components/DetallePersonaje.jsx'
+import DetalleArma from './components/DetalleArma.jsx'
 import Planificador from './components/Planificador.jsx'
 import { usePlanificador } from './hooks/usePlanificador.js'
 
-// Navegación sencilla con el hash de la URL: #/, #/personaje/hu-tao, #/planificador
+// Navegación sencilla con el hash de la URL:
+// #/, #/personaje/hu-tao, #/armas, #/arma/staff-of-homa, #/planificador, #/planificador/arma/staff-of-homa
 function leerRuta() {
-  const [, seccion = '', slug] = window.location.hash.split('/')
-  return { seccion, slug }
+  const [, seccion = '', ...resto] = window.location.hash.split('/')
+  return { seccion, resto }
 }
+
+// Los enlaces antiguos #/planificador/hu-tao siguen abriendo al personaje
+const claveDelPlanificador = (resto) => (resto.length === 2 ? resto.join('/') : resto[0] ? `personaje/${resto[0]}` : null)
+
+const MENU = [
+  { href: '#/', texto: 'Personajes', secciones: ['', 'personaje'] },
+  { href: '#/armas', texto: 'Armas', secciones: ['armas', 'arma'] },
+  { href: '#/planificador', texto: 'Planificador', secciones: ['planificador'] },
+]
 
 export default function App() {
   const [ruta, setRuta] = useState(leerRuta)
@@ -24,13 +37,22 @@ export default function App() {
     return () => window.removeEventListener('hashchange', alCambiar)
   }, [])
 
-  const personaje = ruta.seccion === 'personaje' && personajes.find((p) => p.slug === ruta.slug)
+  const { seccion, resto } = ruta
+  const personaje = seccion === 'personaje' && personajes.find((p) => p.slug === resto[0])
+  const arma = seccion === 'arma' && armas.find((a) => a.slug === resto[0])
 
   let pagina
   if (personaje) {
     pagina = <DetallePersonaje key={personaje.slug} personaje={personaje} planificador={planificador} />
-  } else if (ruta.seccion === 'planificador') {
-    pagina = <Planificador key={ruta.slug} personajes={personajes} planificador={planificador} slugInicial={ruta.slug} />
+  } else if (arma) {
+    pagina = <DetalleArma key={arma.slug} arma={arma} planificador={planificador} />
+  } else if (seccion === 'armas') {
+    pagina = <GaleriaArmas armas={armas} />
+  } else if (seccion === 'planificador') {
+    const clave = claveDelPlanificador(resto)
+    pagina = (
+      <Planificador key={clave} personajes={personajes} armas={armas} planificador={planificador} claveInicial={clave} />
+    )
   } else {
     pagina = <Galeria personajes={personajes} />
   }
@@ -42,13 +64,14 @@ export default function App() {
           <span className="logo-estrella">✦</span> Genshin Wiki
         </a>
         <nav className="menu">
-          <a href="#/" className={ruta.seccion !== 'planificador' ? 'activo' : ''}>
-            Personajes
-          </a>
-          <a href="#/planificador" className={ruta.seccion === 'planificador' ? 'activo' : ''}>
-            Planificador
-            {planificador.planes.length > 0 && <span className="insignia">{planificador.planes.length}</span>}
-          </a>
+          {MENU.map((item) => (
+            <a key={item.href} href={item.href} className={item.secciones.includes(seccion) ? 'activo' : ''}>
+              {item.texto}
+              {item.href === '#/planificador' && planificador.planes.length > 0 && (
+                <span className="insignia">{planificador.planes.length}</span>
+              )}
+            </a>
+          ))}
         </nav>
       </header>
 
@@ -58,7 +81,7 @@ export default function App() {
         Sitio de fans no oficial, sin fines comerciales. No está afiliado con HoYoverse.
         Genshin Impact y todos sus personajes e imágenes son propiedad de HoYoverse.
         Datos: <a href="https://github.com/theBowja/genshin-db">genshin-db</a> · Imágenes:{' '}
-        <a href="https://enka.network">Enka.Network</a>
+        <a href="https://enka.network">Enka.Network</a> y <a href="https://gi.yatta.moe">Yatta</a>
       </footer>
     </>
   )

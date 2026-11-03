@@ -731,7 +731,7 @@ select {
 
 @media (max-width: 900px) {
   .tarjeta-plan-cuerpo {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 @media (max-width: 520px) {
@@ -754,5 +754,97 @@ select {
   .materiales,
   .tarjeta-plan-materiales .materiales {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- EXP (libros y minerales) ---------- */
+.materiales li.material-exp {
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+}
+.exp-fuentes {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+.exp-fuente {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.exp-fuente .material-icono {
+  width: 32px;
+  height: 32px;
+}
+.exp-fuente .material-tengo input {
+  width: 72px;
+}
+
+/* ---------- Armas ---------- */
+.detalle-hero-arma .detalle-splash {
+  max-height: 420px;
+}
+.refinamientos {
+  display: inline-flex;
+  gap: 4px;
+  margin: 0 0 10px;
+  background: var(--fondo-3);
+  border-radius: 8px;
+  padding: 3px;
+}
+.refinamientos button {
+  background: none;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  opacity: 0.7;
+  font-size: 0.85rem;
+}
+.refinamientos button.activo {
+  background: var(--dorado);
+  color: #15161f;
+  font-weight: 700;
+  opacity: 1;
+}
+.valor-refinamiento {
+  color: #7fd6e8;
+}
+.historia {
+  margin-top: 14px !important;
+  opacity: 0.85;
+  line-height: 1.7;
+}
+.chip-plan-tipo {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+  opacity: 0.8;
+}
+
+@media (max-width: 520px) {
+  .exp-fuentes {
+    width: 100%;
+    justify-content: space-between;
+    margin-left: 0;
+  }
+  .exp-fuente {
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+  }
+  .exp-fuente .material-tengo {
+    align-items: center;
+  }
+  .exp-fuente .material-tengo input {
+    width: 100%;
+    max-width: 80px;
   }
 }

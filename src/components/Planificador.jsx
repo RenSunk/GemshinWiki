@@ -1,37 +1,53 @@
 import { useMemo, useState } from 'react'
-import { NIVELES, NOMBRES_TALENTOS, calcularPlan, repartirInventario, sumarTotales } from '../utils/calculos.js'
+import {
+  NIVELES,
+  NOMBRES_TALENTOS,
+  calcularPlan,
+  nivelesDisponibles,
+  repartirInventario,
+  sumarTotales,
+} from '../utils/calculos.js'
+import { claveDe, tipoDe } from '../hooks/usePlanificador.js'
 import ListaMateriales from './ListaMateriales.jsx'
 
 const NIVELES_TALENTO = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-const VISTAS = { personaje: 'Por personaje', total: 'Todo junto' }
+const VISTAS = { separado: 'Por separado', total: 'Todo junto' }
 
-export default function Planificador({ personajes, planificador, slugInicial = null }) {
-  const { agregar, quitar, actualizar, mover, inventario, cambiarInventario, vaciarInventario } = planificador
+export default function Planificador({ personajes, armas, planificador, claveInicial = null }) {
+  const { agregar, quitar, actualizar, mover, inventario, cambiarInventario, vaciarInventario, alquimia, setAlquimia } =
+    planificador
   const [seleccion, setSeleccion] = useState('')
-  const [abierto, setAbierto] = useState(slugInicial)
-  const [vista, setVista] = useState('personaje')
+  const [abierto, setAbierto] = useState(claveInicial)
+  const [vista, setVista] = useState('separado')
   const [ocultarCompletos, setOcultarCompletos] = useState(false)
 
-  const porSlug = useMemo(() => new Map(personajes.map((p) => [p.slug, p])), [personajes])
-  // Ignora personajes guardados que ya no existan en los datos
-  const planes = planificador.planes.filter((plan) => porSlug.has(plan.slug))
-  const disponibles = personajes.filter((p) => !planes.some((plan) => plan.slug === p.slug))
+  const catalogo = useMemo(
+    () => ({
+      personaje: new Map(personajes.map((p) => [p.slug, p])),
+      arma: new Map(armas.map((a) => [a.slug, a])),
+    }),
+    [personajes, armas],
+  )
+  const entidadDe = (plan) => catalogo[tipoDe(plan)].get(plan.slug)
 
-  const necesidades = planes.map((plan) => calcularPlan(porSlug.get(plan.slug), plan))
-  const cubiertos = repartirInventario(necesidades, inventario)
+  // Ignora planes guardados cuyo personaje o arma ya no exista en los datos
+  const planes = planificador.planes.filter((plan) => entidadDe(plan))
+  const enPlan = new Set(planes.map(claveDe))
+
+  const necesidades = planes.map((plan) => calcularPlan(entidadDe(plan), plan))
+  const repartos = repartirInventario(necesidades, inventario, { alquimia })
 
   // Si no hay ninguno abierto (o se quitó), se muestra el último añadido
-  const indiceAbierto = planes.some((p) => p.slug === abierto)
-    ? planes.findIndex((p) => p.slug === abierto)
-    : planes.length - 1
+  const indiceAbierto = enPlan.has(abierto) ? planes.findIndex((p) => claveDe(p) === abierto) : planes.length - 1
   const planAbierto = planes[indiceAbierto]
 
   const alAgregar = (e) => {
     e.preventDefault()
     if (seleccion) {
-      agregar(seleccion)
+      const [tipo, slug] = seleccion.split('/')
+      agregar(tipo, catalogo[tipo].get(slug))
       setAbierto(seleccion)
-      setVista('personaje')
+      setVista('separado')
     }
     setSeleccion('')
   }
@@ -46,18 +62,31 @@ export default function Planificador({ personajes, planificador, slugInicial = n
     <section className="planificador">
       <h1 className="titulo-pagina">Planificador de materiales</h1>
       <p className="nota">
-        Elige el nivel actual y el objetivo de cada personaje y sus talentos, y escribe en «Tengo» cuánto tienes de
-        cada material. El plan se guarda en este navegador.
+        Elige el nivel actual y el objetivo de cada personaje o arma, y escribe en «Tengo» cuánto tienes de cada
+        material. El plan se guarda en este navegador.
       </p>
 
       <form className="agregar-personaje" onSubmit={alAgregar}>
         <select value={seleccion} onChange={(e) => setSeleccion(e.target.value)}>
-          <option value="">Elige un personaje…</option>
-          {disponibles.map((p) => (
-            <option key={p.slug} value={p.slug}>
-              {p.nombre}
-            </option>
-          ))}
+          <option value="">Elige un personaje o arma…</option>
+          <optgroup label="Personajes">
+            {personajes
+              .filter((p) => !enPlan.has(`personaje/${p.slug}`))
+              .map((p) => (
+                <option key={p.slug} value={`personaje/${p.slug}`}>
+                  {p.nombre}
+                </option>
+              ))}
+          </optgroup>
+          <optgroup label="Armas">
+            {armas
+              .filter((a) => !enPlan.has(`arma/${a.slug}`))
+              .map((a) => (
+                <option key={a.slug} value={`arma/${a.slug}`}>
+                  {a.nombre} ({a.rareza}★ · {a.tipo})
+                </option>
+              ))}
+          </optgroup>
         </select>
         <button type="submit" className="boton-principal" disabled={!seleccion}>
           Añadir
@@ -66,7 +95,8 @@ export default function Planificador({ personajes, planificador, slugInicial = n
 
       {planes.length === 0 ? (
         <p className="vacio">
-          Todavía no hay personajes en el plan. Añade uno arriba o desde su página en la <a href="#/">galería</a>.
+          Todavía no hay nada en el plan. Añade algo arriba o desde la página de un{' '}
+          <a href="#/">personaje</a> o un <a href="#/armas">arma</a>.
         </p>
       ) : (
         <>
@@ -88,28 +118,33 @@ export default function Planificador({ personajes, planificador, slugInicial = n
               <input type="checkbox" checked={ocultarCompletos} onChange={(e) => setOcultarCompletos(e.target.checked)} />
               Ocultar completos
             </label>
+            <label title="Si te faltan materiales de nivel alto, se fabrican con 3 del nivel inferior que te sobren">
+              <input type="checkbox" checked={alquimia} onChange={(e) => setAlquimia(e.target.checked)} />
+              Usar alquimia
+            </label>
             <button className="boton-enlace" onClick={alVaciar} disabled={!Object.keys(inventario).length}>
               Vaciar inventario
             </button>
           </div>
 
-          {vista === 'personaje' ? (
+          {vista === 'separado' ? (
             <>
-              <div className="selector-plan" role="tablist" aria-label="Personajes del plan">
+              <div className="selector-plan" role="tablist" aria-label="Personajes y armas del plan">
                 {planes.map((plan, i) => {
-                  const personaje = porSlug.get(plan.slug)
-                  const { porcentaje } = contarProgreso(necesidades[i], cubiertos[i])
+                  const entidad = entidadDe(plan)
+                  const { porcentaje } = contarProgreso(repartos[i])
                   return (
                     <button
-                      key={plan.slug}
+                      key={claveDe(plan)}
                       role="tab"
                       aria-selected={i === indiceAbierto}
                       className={`chip-plan ${i === indiceAbierto ? 'abierto' : ''}`}
-                      onClick={() => setAbierto(plan.slug)}
+                      onClick={() => setAbierto(claveDe(plan))}
                     >
                       <span className="chip-plan-orden">{i + 1}</span>
-                      <img src={personaje.icono} alt="" className={`rareza-${personaje.rareza}`} />
-                      <span className="chip-plan-nombre">{personaje.nombre}</span>
+                      {tipoDe(plan) === 'arma' && <span className="chip-plan-tipo">Arma</span>}
+                      <img src={entidad.icono} alt="" className={`rareza-${entidad.rareza}`} />
+                      <span className="chip-plan-nombre">{entidad.nombre}</span>
                       <span className="progreso progreso-mini">
                         <span style={{ width: `${porcentaje}%` }} />
                       </span>
@@ -119,32 +154,33 @@ export default function Planificador({ personajes, planificador, slugInicial = n
               </div>
               {planes.length > 1 && (
                 <p className="nota">
-                  «Tengo» es tu inventario total. Si varios personajes usan el mismo material, se reparte en el orden
-                  de la lista (el número de cada uno): usa ← → en su panel para cambiar quién va primero.
+                  «Tengo» es tu inventario total. Si varios usan el mismo material, se reparte en el orden de la lista
+                  (el número de cada uno): usa ← → en su panel para cambiar quién va primero.
                 </p>
               )}
               <TarjetaPlan
-                key={planAbierto.slug}
-                personaje={porSlug.get(planAbierto.slug)}
+                key={claveDe(planAbierto)}
+                entidad={entidadDe(planAbierto)}
                 plan={planAbierto}
                 posicion={indiceAbierto + 1}
                 total={planes.length}
-                onCambiar={(cambios) => actualizar(planAbierto.slug, cambios)}
-                onQuitar={() => quitar(planAbierto.slug)}
-                onMover={(direccion) => mover(planAbierto.slug, direccion)}
+                onCambiar={(cambios) => actualizar(claveDe(planAbierto), cambios)}
+                onQuitar={() => quitar(claveDe(planAbierto))}
+                onMover={(direccion) => mover(claveDe(planAbierto), direccion)}
               >
-                <Progreso necesita={necesidades[indiceAbierto]} cubiertos={cubiertos[indiceAbierto]} />
+                <Progreso reparto={repartos[indiceAbierto]} />
                 <ListaMateriales
-                  totales={necesidades[indiceAbierto]}
-                  cubiertos={cubiertos[indiceAbierto]}
+                  totales={repartos[indiceAbierto].necesita}
+                  cubiertos={repartos[indiceAbierto].cubiertos}
+                  fabricados={repartos[indiceAbierto].fabricados}
                   {...propsLista}
                 />
               </TarjetaPlan>
             </>
           ) : (
             <div className="tarjeta-plan">
-              <p className="nota">Suma de los materiales de todos los personajes del plan.</p>
-              <TodoJunto necesidades={necesidades} propsLista={propsLista} />
+              <p className="nota">Suma de los materiales de todo lo que hay en el plan.</p>
+              <TodoJunto necesidades={necesidades} alquimia={alquimia} propsLista={propsLista} />
             </div>
           )}
         </>
@@ -153,29 +189,35 @@ export default function Planificador({ personajes, planificador, slugInicial = n
   )
 }
 
-function TodoJunto({ necesidades, propsLista }) {
-  const totales = sumarTotales(necesidades)
+function TodoJunto({ necesidades, alquimia, propsLista }) {
+  const [reparto] = repartirInventario([sumarTotales(necesidades)], propsLista.inventario, { alquimia })
   return (
     <>
-      <Progreso necesita={totales} cubiertos={repartirInventario([totales], propsLista.inventario)[0]} />
-      <ListaMateriales totales={totales} {...propsLista} />
+      <Progreso reparto={reparto} />
+      <ListaMateriales
+        totales={reparto.necesita}
+        cubiertos={reparto.cubiertos}
+        fabricados={reparto.fabricados}
+        {...propsLista}
+      />
     </>
   )
 }
 
-function contarProgreso(necesita, cubiertos) {
+function contarProgreso({ necesita, cubiertos }) {
   const completos = [...necesita].filter(([id, cantidad]) => cubiertos.get(id) >= cantidad).length
   const porcentaje = necesita.size ? Math.round((completos / necesita.size) * 100) : 100
   return { completos, porcentaje }
 }
 
-function Progreso({ necesita, cubiertos }) {
-  const { completos, porcentaje } = contarProgreso(necesita, cubiertos)
+function Progreso({ reparto }) {
+  const { completos, porcentaje } = contarProgreso(reparto)
 
   return (
     <div className="progreso-bloque">
       <span>
-        {completos} de {necesita.size} materiales completos
+        {completos} de {reparto.necesita.size} materiales completos
+        {reparto.moraAlquimia > 0 && ` · la mora incluye ${reparto.moraAlquimia.toLocaleString('es')} de alquimia`}
       </span>
       <div className="progreso" role="progressbar" aria-valuenow={porcentaje} aria-valuemin="0" aria-valuemax="100">
         <div style={{ width: `${porcentaje}%` }} />
@@ -184,8 +226,10 @@ function Progreso({ necesita, cubiertos }) {
   )
 }
 
-function TarjetaPlan({ personaje, plan, posicion, total, onCambiar, onQuitar, onMover, children }) {
-  const sinTalentos = personaje.costesTalento.length === 0
+function TarjetaPlan({ entidad, plan, posicion, total, onCambiar, onQuitar, onMover, children }) {
+  const esArma = tipoDe(plan) === 'arma'
+  const sinTalentos = !esArma && entidad.costesTalento.length === 0
+  const niveles = nivelesDisponibles(entidad)
 
   // Si el actual supera al objetivo, el objetivo sube con él (y al revés)
   const cambiarNivel = (campo, valor) => {
@@ -205,8 +249,8 @@ function TarjetaPlan({ personaje, plan, posicion, total, onCambiar, onQuitar, on
   return (
     <article className="tarjeta-plan">
       <header>
-        <img src={personaje.icono} alt="" className={`rareza-${personaje.rareza}`} />
-        <a href={`#/personaje/${personaje.slug}`}>{personaje.nombre}</a>
+        <img src={entidad.icono} alt="" className={`rareza-${entidad.rareza}`} />
+        <a href={esArma ? `#/arma/${entidad.slug}` : `#/personaje/${entidad.slug}`}>{entidad.nombre}</a>
         {total > 1 && (
           <>
             <span className="prioridad">
@@ -220,11 +264,7 @@ function TarjetaPlan({ personaje, plan, posicion, total, onCambiar, onQuitar, on
             </button>
           </>
         )}
-        <button
-          className="boton-icono boton-quitar"
-          onClick={onQuitar}
-          aria-label={`Quitar a ${personaje.nombre}`}
-        >
+        <button className="boton-icono boton-quitar" onClick={onQuitar} aria-label={`Quitar ${entidad.nombre}`}>
           ✕
         </button>
       </header>
@@ -234,7 +274,7 @@ function TarjetaPlan({ personaje, plan, posicion, total, onCambiar, onQuitar, on
           <div className="fila-plan">
             <span>Nivel</span>
             <Rango
-              opciones={NIVELES.map((n, i) => [i, n.etiqueta])}
+              opciones={niveles.map((n) => [NIVELES.indexOf(n), n.etiqueta])}
               desde={plan.nivelActual}
               hasta={plan.nivelObjetivo}
               onDesde={(v) => cambiarNivel('nivelActual', v)}
@@ -242,9 +282,14 @@ function TarjetaPlan({ personaje, plan, posicion, total, onCambiar, onQuitar, on
             />
           </div>
 
-          {sinTalentos ? (
-            <p className="nota">Los talentos de este personaje no están disponibles en los datos.</p>
-          ) : (
+          {esArma && (
+            <p className="nota">
+              {entidad.rareza}★ · {entidad.tipo}
+            </p>
+          )}
+          {sinTalentos && <p className="nota">Los talentos de este personaje no están disponibles en los datos.</p>}
+          {!esArma &&
+            !sinTalentos &&
             NOMBRES_TALENTOS.map((nombre, i) => (
               <div className="fila-plan" key={nombre}>
                 <span>{nombre}</span>
@@ -256,8 +301,7 @@ function TarjetaPlan({ personaje, plan, posicion, total, onCambiar, onQuitar, on
                   onHasta={(v) => cambiarTalento(i, 1, v)}
                 />
               </div>
-            ))
-          )}
+            ))}
         </div>
 
         <div className="tarjeta-plan-materiales">{children}</div>

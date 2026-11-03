@@ -1,9 +1,6 @@
 import { useMemo, useState } from 'react'
-import { ARMAS, ELEMENTOS, REGIONES, COLORES_ELEMENTO } from '../utils/constantes.js'
-import TarjetaPersonaje from './TarjetaPersonaje.jsx'
-
-// Quita tildes para que "citlali" encuentre a "Citlalí"
-const normalizar = (texto) => texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+import { ARMAS, ELEMENTOS, REGIONES, COLORES_ELEMENTO, normalizar } from '../utils/constantes.js'
+import Tarjeta from './Tarjeta.jsx'
 
 export default function Galeria({ personajes }) {
   const [busqueda, setBusqueda] = useState('')
@@ -85,7 +82,15 @@ export default function Galeria({ personajes }) {
       {filtrados.length ? (
         <div className="galeria">
           {filtrados.map((p) => (
-            <TarjetaPersonaje key={p.id} personaje={p} />
+            <Tarjeta
+              key={p.id}
+              href={`#/personaje/${p.slug}`}
+              nombre={p.nombre}
+              icono={p.icono}
+              rareza={p.rareza}
+              color={COLORES_ELEMENTO[p.elemento]}
+              titulo={p.elemento}
+            />
           ))}
         </div>
       ) : (

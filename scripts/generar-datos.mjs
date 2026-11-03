@@ -10,11 +10,15 @@ const IMG = 'https://enka.network/ui'
 const IMG_MATERIALES = 'https://gi.yatta.moe/assets/UI'
 
 const ELEMENTOS_VALIDOS = ['Pyro', 'Hydro', 'Anemo', 'Electro', 'Dendro', 'Cryo', 'Geo']
-const ID_INGENIO_DEL_HEROE = 104003
+// Libros de EXP de personaje y minerales de EXP de arma: el inventario los usa aunque
+// ningún coste los nombre directamente
+const IDS_EXP = [104003, 104002, 104001, 104013, 104012, 104011]
+
+const aSlug = (nombreIngles) => nombreIngles.toLowerCase().replace(/[^a-z0-9]+/g, '-')
 
 // Los costes se guardan como pares [id, cantidad] para que el JSON pese menos.
 // Los nombres e iconos van una sola vez en materiales.json.
-const idsUsados = new Set([ID_INGENIO_DEL_HEROE])
+const idsUsados = new Set(IDS_EXP)
 function compactar(fase = []) {
   return fase.map(({ id, count }) => {
     idsUsados.add(id)
@@ -22,9 +26,8 @@ function compactar(fase = []) {
   })
 }
 
-const nombresEnIngles = genshindb.characters('names', { matchCategories: true })
-
-const personajes = nombresEnIngles.map((nombreIngles) => {
+// ---------- Personajes ----------
+const personajes = genshindb.characters('names', { matchCategories: true }).map((nombreIngles) => {
   const c = genshindb.characters(nombreIngles, ES)
   const t = genshindb.talents(nombreIngles, ES)
   const k = genshindb.constellations(nombreIngles, ES)
@@ -33,7 +36,7 @@ const personajes = nombresEnIngles.map((nombreIngles) => {
 
   return {
     id: c.id,
-    slug: nombreIngles.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+    slug: aSlug(nombreIngles),
     nombre: c.name,
     titulo: c.title,
     descripcion: c.description,
@@ -69,9 +72,80 @@ const personajes = nombresEnIngles.map((nombreIngles) => {
       : [],
   }
 })
-
 personajes.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
 
+// ---------- Armas ----------
+// La stat secundaria viene como número (0.144); baseStatText dice si es porcentaje ("14,4%")
+function formatearStat(valor, esPorcentaje) {
+  return esPorcentaje ? `${(valor * 100).toFixed(1).replace('.', ',')}%` : String(Math.round(valor))
+}
+
+// El texto del efecto va una sola vez con huecos {0}, {1}…; cada refinamiento solo trae sus valores.
+// Las armas que no se pueden refinar (exclusivas de PlayStation, de misión) solo traen el texto de R1.
+function extraerEfecto(w) {
+  if (!w.r1) return null
+  const refinamientos = ['r1', 'r2', 'r3', 'r4', 'r5'].map((r) => w[r]?.values)
+  if (refinamientos.every((v) => v?.length)) {
+    return { nombre: w.effectName, plantilla: w.effectTemplateRaw.replace(/<\/?color[^>]*>/g, ''), valores: refinamientos }
+  }
+  return { nombre: w.effectName, texto: w.r1.description }
+}
+
+const historias = {}
+const slugsVistos = new Set()
+const nombresArmas = genshindb.weapons('names', { matchCategories: true }).filter((nombreIngles) => {
+  // Algunas armas de misión aparecen repetidas con el mismo nombre
+  const slug = aSlug(nombreIngles)
+  if (slugsVistos.has(slug)) return false
+  slugsVistos.add(slug)
+  return true
+})
+const armas = nombresArmas.map((nombreIngles) => {
+  const w = genshindb.weapons(nombreIngles, ES)
+  const slug = aSlug(nombreIngles)
+  const fases = Object.keys(w.costs).length // 4 en armas de 1-2★ (nivel máx. 70), 6 en el resto
+  const nivelMax = fases === 6 ? 90 : 70
+  const minimo = w.stats(1)
+  const maximo = w.stats(nivelMax, '+')
+  const esPorcentaje = w.baseStatText?.endsWith('%')
+
+  historias[slug] = { descripcion: w.description, historia: w.story ?? '' }
+
+  return {
+    id: w.id,
+    slug,
+    nombre: w.name,
+    rareza: w.rarity,
+    tipo: w.weaponText,
+    version: w.version,
+    icono: `${IMG}/${w.images.filename_icon}.png`,
+    imagen: `${IMG}/${w.images.filename_gacha}.png`,
+    nivelMax,
+    atq: [Math.round(minimo.attack), Math.round(maximo.attack)],
+    stat: w.mainStatText
+      ? { nombre: w.mainStatText, valores: [w.baseStatText, formatearStat(maximo.specialized, esPorcentaje)] }
+      : null,
+    efecto: extraerEfecto(w),
+    costesAscension: Object.keys(w.costs)
+      .sort()
+      .map((f) => compactar(w.costs[f])),
+  }
+})
+armas.sort((a, b) => b.rareza - a.rareza || a.nombre.localeCompare(b.nombre, 'es'))
+
+// ---------- Recetas de alquimia (3 de un nivel → 1 del siguiente) ----------
+const recetas = {}
+for (const nombreIngles of genshindb.crafts('names', { matchCategories: true })) {
+  const receta = genshindb.crafts(nombreIngles, ES)
+  const resultado = genshindb.materials(nombreIngles)
+  if (!receta || !resultado || receta.recipe.length !== 1) continue
+  const [ingrediente] = receta.recipe
+  if (!idsUsados.has(resultado.id)) continue
+  idsUsados.add(ingrediente.id)
+  recetas[resultado.id] = { de: ingrediente.id, cantidad: ingrediente.count, mora: receta.moraCost ?? 0 }
+}
+
+// ---------- Materiales ----------
 const todosLosMateriales = genshindb.materials('names', { ...ES, matchCategories: true, verboseCategories: true })
 const materiales = {}
 for (const m of todosLosMateriales) {
@@ -83,6 +157,7 @@ for (const m of todosLosMateriales) {
     orden: m.sortRank ?? 0,
     icono: `${IMG_MATERIALES}/${m.images.filename_icon}.png`,
     ...(m.daysOfWeek && { dias: m.daysOfWeek }),
+    ...(recetas[m.id] && { receta: recetas[m.id] }),
   }
 }
 
@@ -91,5 +166,10 @@ if (faltantes.length) throw new Error(`Materiales sin datos: ${faltantes.join(',
 
 mkdirSync('src/data', { recursive: true })
 writeFileSync('src/data/personajes.json', JSON.stringify(personajes))
+writeFileSync('src/data/armas.json', JSON.stringify(armas))
+writeFileSync('src/data/armas-historias.json', JSON.stringify(historias))
 writeFileSync('src/data/materiales.json', JSON.stringify(materiales))
-console.log(`Listo: ${personajes.length} personajes y ${Object.keys(materiales).length} materiales en src/data/`)
+console.log(
+  `Listo: ${personajes.length} personajes, ${armas.length} armas, ${Object.keys(materiales).length} materiales ` +
+    `(${Object.keys(recetas).length} con receta) en src/data/`,
+)
