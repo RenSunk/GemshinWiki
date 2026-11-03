@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import { COLORES_ELEMENTO } from '../utils/constantes.js'
 import { calcularPlan, nuevoPlan } from '../utils/calculos.js'
+import { useDetalle } from '../hooks/useDetalle.js'
 import ListaMateriales from './ListaMateriales.jsx'
+import Cargando from './Cargando.jsx'
 
 const PESTANAS = ['Talentos', 'Constelaciones', 'Materiales']
 
 export default function DetallePersonaje({ personaje: p, planificador }) {
   const [pestana, setPestana] = useState(PESTANAS[0])
+  const detalle = useDetalle('personaje', p.slug)
   const color = COLORES_ELEMENTO[p.elemento]
   const enPlan = planificador.estaEnPlan('personaje', p.slug)
 
@@ -68,9 +71,10 @@ export default function DetallePersonaje({ personaje: p, planificador }) {
         ))}
       </div>
 
-      {pestana === 'Talentos' && <ListaHabilidades items={p.talentos} />}
-      {pestana === 'Constelaciones' && (
-        <ListaHabilidades items={p.constelaciones.map((c, i) => ({ ...c, tipo: `C${i + 1}` }))} />
+      {pestana !== 'Materiales' && (!detalle || detalle.error) && <Cargando error={detalle?.error} />}
+      {pestana === 'Talentos' && detalle?.talentos && <ListaHabilidades items={detalle.talentos} />}
+      {pestana === 'Constelaciones' && detalle?.constelaciones && (
+        <ListaHabilidades items={detalle.constelaciones.map((c, i) => ({ ...c, tipo: `C${i + 1}` }))} />
       )}
       {pestana === 'Materiales' && <Materiales personaje={p} />}
     </article>

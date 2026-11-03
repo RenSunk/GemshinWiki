@@ -2,7 +2,8 @@
 
 https://genshin-wiki.vercel.app
 
-Enciclopedia de personajes, armas y artefactos, y planificador de materiales de Genshin Impact, hecho por fans (React + Vite).
+Enciclopedia de personajes, armas y artefactos, constructor de equipos y planificador de materiales de
+Genshin Impact, hecho por fans (React + Vite).
 
 ## Comandos
 
@@ -19,8 +20,11 @@ Cada `git push` a `main` se publica solo en Vercel.
 
 - `scripts/generar-datos.mjs` lee el paquete `genshin-db` (179 MB, todos los idiomas) y guarda
   solo lo que usa la web, en español, en `src/data/`:
-  `personajes.json`, `armas.json`, `artefactos.json`, `materiales.json` (con las recetas de alquimia), y
-  `armas-historias.json` y `artefactos-historias.json` (se descargan aparte, solo al abrir una historia).
+  `personajes.json`, `armas.json`, `artefactos.json` y `materiales.json` (con las recetas de alquimia)
+  van en la carga inicial. Los textos que solo se ven en la página de detalle (talentos, constelaciones,
+  efectos de armas, historias) van en un archivo por entrada: `src/data/personajes/<slug>.json`,
+  `src/data/armas/<slug>.json` y `src/data/artefactos/<slug>.json`. El navegador descarga solo el de
+  la página abierta (`hooks/useDetalle.js`).
 - El dominio de cada set de artefactos sale de las recompensas de los dominios de artefactos.
 - Cuando salga una versión nueva del juego: `npm update genshin-db && npm run datos`.
 - Imágenes de personajes y armas: Enka.Network. Iconos de materiales: gi.yatta.moe (Enka no tiene los más nuevos).
@@ -42,12 +46,19 @@ Cada `git push` a `main` se publica solo en Vercel.
 Los días y los dominios salen de los datos (`dias` y `dominio` en `materiales.json`), no están escritos a
 mano: si el juego cambiara la rotación, basta con `npm update genshin-db && npm run datos`.
 
+## Equipos
+
+`#/equipos/<slug>,<slug>,…` arma un equipo de 4 y muestra sus consonancias elementales (solo con el equipo
+completo, como en el juego) y las reacciones posibles. Los personajes de elemento variable llevan el
+elegido en la URL (`aether.dendro`). Los efectos de las consonancias vienen de la wiki oficial de HoYoLAB
+y los nombres de las reacciones, de los textos del juego en español (`utils/equipos.js`).
+
 ## Estructura
 
 ```
 src/
   App.jsx                          navegación (#/, #/personaje/<slug>, #/armas, #/arma/<slug>,
-                                   #/artefactos, #/artefacto/<slug>, #/hoy,
+                                   #/artefactos, #/artefacto/<slug>, #/equipos/<slugs>, #/hoy,
                                    #/planificador/<personaje|arma>/<slug>, #/importar/<datos>)
   components/Galeria.jsx           personajes: buscador y filtros
   components/GaleriaArmas.jsx      armas: buscador y filtros
@@ -58,12 +69,16 @@ src/
   components/DetalleArtefacto.jsx  bonos, dónde conseguirlo, piezas e historia
   components/Planificador.jsx      niveles objetivo de personajes y armas
   components/ListaMateriales.jsx   materiales agrupados con iconos (y campos "Tengo" en el planificador)
+  components/Equipos.jsx           constructor de equipos
+  components/Cargando.jsx          aviso mientras llegan los textos de una página de detalle
   components/Hoy.jsx               qué dominios hacer cada día
   components/Respaldo.jsx          exportar e importar el plan
   components/ImportarEnlace.jsx    página que abre un enlace de copia
   hooks/usePlanificador.js         plan, inventario y opción de alquimia
   hooks/usePlanCalculado.js        necesidades y reparto del inventario (planificador y Hoy)
   hooks/useAlmacenado.js           useState que se guarda en localStorage
+  hooks/useDetalle.js              descarga el archivo de textos de una página de detalle
+  utils/equipos.js                 consonancias, reacciones y equipo en la URL
   utils/calculos.js                costes de ascensión, EXP, talentos, reparto del inventario y alquimia
   utils/hoy.js                     día del juego y materiales pendientes por dominio
   utils/respaldo.js                formato, validación y enlace de la copia de seguridad

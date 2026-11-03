@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { calcularPlan, nuevoPlan } from '../utils/calculos.js'
+import { useDetalle } from '../hooks/useDetalle.js'
 import ListaMateriales from './ListaMateriales.jsx'
+import Cargando from './Cargando.jsx'
 
 const PESTANAS = ['Efecto', 'Historia', 'Materiales']
 const COLOR_ARMA = '#d3bc8e'
@@ -8,6 +10,7 @@ const COLOR_ARMA = '#d3bc8e'
 export default function DetalleArma({ arma: a, planificador }) {
   const [pestana, setPestana] = useState(PESTANAS[0])
   const enPlan = planificador.estaEnPlan('arma', a.slug)
+  const detalle = useDetalle('arma', a.slug)
 
   const datos = [
     ['Tipo', a.tipo],
@@ -64,8 +67,14 @@ export default function DetalleArma({ arma: a, planificador }) {
         ))}
       </div>
 
-      {pestana === 'Efecto' && <Efecto efecto={a.efecto} />}
-      {pestana === 'Historia' && <Historia slug={a.slug} />}
+      {pestana !== 'Materiales' && (!detalle || detalle.error) && <Cargando error={detalle?.error} />}
+      {pestana === 'Efecto' && detalle && !detalle.error && <Efecto efecto={detalle.efecto} />}
+      {pestana === 'Historia' && detalle && !detalle.error && (
+        <div className="habilidad">
+          <p className="detalle-descripcion">{detalle.descripcion}</p>
+          {detalle.historia && <p className="historia">{detalle.historia}</p>}
+        </div>
+      )}
       {pestana === 'Materiales' && (
         <div>
           <p className="nota">
@@ -110,25 +119,6 @@ function Efecto({ efecto }) {
         </div>
       )}
       <p>{partes}</p>
-    </div>
-  )
-}
-
-// Las historias pesan mucho (más de 600 KB todas juntas): se descargan solo al abrir esta pestaña
-function Historia({ slug }) {
-  const [historias, setHistorias] = useState(null)
-
-  useEffect(() => {
-    import('../data/armas-historias.json').then((modulo) => setHistorias(modulo.default))
-  }, [])
-
-  if (!historias) return <p className="vacio">Cargando historia…</p>
-  const { descripcion, historia } = historias[slug] ?? {}
-
-  return (
-    <div className="habilidad">
-      <p className="detalle-descripcion">{descripcion}</p>
-      {historia && <p className="historia">{historia}</p>}
     </div>
   )
 }

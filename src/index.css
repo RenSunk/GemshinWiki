@@ -1066,3 +1066,145 @@ select {
     white-space: nowrap;
   }
 }
+
+/* ---------- Constructor de equipos ---------- */
+.casillas {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+.casilla {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 8px 12px;
+  background:
+    radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--color) 22%, transparent), transparent 70%),
+    var(--fondo-2);
+  border: 1px solid color-mix(in srgb, var(--color) 45%, var(--borde));
+  border-radius: 14px;
+  min-height: 170px;
+}
+.casilla.vacia {
+  justify-content: center;
+  background: transparent;
+  border: 2px dashed var(--borde);
+  opacity: 0.6;
+}
+.casilla img {
+  width: 84px;
+  height: 84px;
+  border-radius: 14px;
+}
+.casilla-nombre {
+  font-weight: 600;
+  color: var(--texto-fuerte);
+  text-decoration: none;
+  text-align: center;
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+.casilla-elemento {
+  font-size: 0.8rem;
+  color: var(--color);
+  font-weight: 600;
+}
+.casilla select {
+  padding: 3px 6px;
+  font-size: 0.8rem;
+  flex: none;
+}
+.casilla-quitar {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 1px solid var(--borde);
+  background: var(--fondo);
+  cursor: pointer;
+  font-size: 0.75rem;
+  opacity: 0.75;
+}
+.casilla-quitar:hover {
+  opacity: 1;
+  color: #e06c6c;
+  border-color: #e06c6c;
+}
+.analisis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  gap: 8px 24px;
+}
+.analisis .habilidad {
+  border-left-color: var(--color, var(--dorado));
+}
+.analisis .habilidad h3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.reacciones {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+.reacciones li {
+  background: var(--fondo-2);
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+.reacciones strong {
+  color: var(--texto-fuerte);
+  margin-right: 6px;
+}
+.reacciones small {
+  display: block;
+  margin-top: 4px;
+  opacity: 0.8;
+  font-size: 0.85rem;
+}
+.elementos-mini {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  vertical-align: middle;
+}
+.elemento-mini {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 999px;
+  color: var(--color);
+  border: 1px solid var(--color);
+}
+.galeria-equipo .tarjeta {
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  text-align: inherit;
+}
+.galeria-equipo .tarjeta:disabled {
+  cursor: default;
+  opacity: 0.35;
+  transform: none;
+  box-shadow: none;
+}
+.galeria-equipo .tarjeta.en-equipo:disabled {
+  opacity: 0.6;
+  outline: 2px solid var(--dorado);
+}
+@media (max-width: 620px) {
+  .casillas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

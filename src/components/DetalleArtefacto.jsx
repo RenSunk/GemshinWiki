@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useDetalle } from '../hooks/useDetalle.js'
+import Cargando from './Cargando.jsx'
 
 const PESTANAS = ['Bonos', 'Piezas', 'Historia']
 const COLOR_ARTEFACTO = '#d3bc8e'
@@ -87,20 +89,15 @@ export default function DetalleArtefacto({ artefacto: a }) {
   )
 }
 
-// Las historias pesan mucho (casi 500 KB todas juntas): se descargan solo al abrir esta pestaña
+// La historia de cada set está en su propio archivo: se descarga solo al abrir esta pestaña
 function Historia({ artefacto }) {
-  const [historias, setHistorias] = useState(null)
-
-  useEffect(() => {
-    import('../data/artefactos-historias.json').then((modulo) => setHistorias(modulo.default))
-  }, [])
-
-  if (!historias) return <p className="vacio">Cargando historia…</p>
+  const detalle = useDetalle('artefacto', artefacto.slug)
+  if (!detalle || detalle.error) return <Cargando error={detalle?.error} />
 
   return (
     <div className="habilidades">
       {artefacto.piezas.map((p, i) => {
-        const { descripcion, historia } = historias[artefacto.slug]?.[i] ?? {}
+        const { descripcion, historia } = detalle.piezas[i] ?? {}
         return (
           <div key={p.tipo} className="habilidad">
             <span className="habilidad-tipo">{p.tipo}</span>

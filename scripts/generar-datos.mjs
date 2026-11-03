@@ -1,7 +1,9 @@
 // Extrae de genshin-db solo los datos que usa la web (en español) y los guarda
 // en src/data/. Así el navegador no carga los 179 MB del paquete.
+// Los textos que solo se ven en la página de detalle (talentos, efectos, historias) van en un
+// archivo por personaje, arma o set: el navegador descarga solo el de la página que se abre.
 // Uso: npm run datos
-import { writeFileSync, mkdirSync } from 'node:fs'
+import { writeFileSync, mkdirSync, rmSync } from 'node:fs'
 import genshindb from 'genshin-db'
 
 const ES = { resultLanguage: 'Spanish' }
@@ -27,16 +29,34 @@ function compactar(fase = []) {
 }
 
 // ---------- Personajes ----------
+const detallesPersonajes = {}
 const personajes = genshindb.characters('names', { matchCategories: true }).map((nombreIngles) => {
   const c = genshindb.characters(nombreIngles, ES)
   const t = genshindb.talents(nombreIngles, ES)
   const k = genshindb.constellations(nombreIngles, ES)
 
   const talento = (x, tipo) => x && { tipo, nombre: x.name, descripcion: x.description }
+  const slug = aSlug(nombreIngles)
+
+  detallesPersonajes[slug] = {
+    talentos: t
+      ? [
+          talento(t.combat1, 'Ataque normal'),
+          talento(t.combat2, 'Habilidad elemental'),
+          talento(t.combat3, 'Habilidad definitiva'),
+          talento(t.passive1, 'Pasiva'),
+          talento(t.passive2, 'Pasiva'),
+          talento(t.passive3, 'Pasiva'),
+        ].filter(Boolean)
+      : [],
+    constelaciones: k
+      ? ['c1', 'c2', 'c3', 'c4', 'c5', 'c6'].map((n) => ({ nombre: k[n].name, descripcion: k[n].description }))
+      : [],
+  }
 
   return {
     id: c.id,
-    slug: aSlug(nombreIngles),
+    slug,
     nombre: c.name,
     titulo: c.title,
     descripcion: c.description,
@@ -56,19 +76,6 @@ const personajes = genshindb.characters('names', { matchCategories: true }).map(
     // costesTalento[0] = subir de nivel 1 a 2 … [8] = de 9 a 10 (igual para los 3 talentos)
     costesTalento: t?.costs
       ? ['lvl2', 'lvl3', 'lvl4', 'lvl5', 'lvl6', 'lvl7', 'lvl8', 'lvl9', 'lvl10'].map((n) => compactar(t.costs[n]))
-      : [],
-    talentos: t
-      ? [
-          talento(t.combat1, 'Ataque normal'),
-          talento(t.combat2, 'Habilidad elemental'),
-          talento(t.combat3, 'Habilidad definitiva'),
-          talento(t.passive1, 'Pasiva'),
-          talento(t.passive2, 'Pasiva'),
-          talento(t.passive3, 'Pasiva'),
-        ].filter(Boolean)
-      : [],
-    constelaciones: k
-      ? ['c1', 'c2', 'c3', 'c4', 'c5', 'c6'].map((n) => ({ nombre: k[n].name, descripcion: k[n].description }))
       : [],
   }
 })
@@ -91,7 +98,7 @@ function extraerEfecto(w) {
   return { nombre: w.effectName, texto: w.r1.description }
 }
 
-const historias = {}
+const detallesArmas = {}
 const slugsVistos = new Set()
 const nombresArmas = genshindb.weapons('names', { matchCategories: true }).filter((nombreIngles) => {
   // Algunas armas de misión aparecen repetidas con el mismo nombre
@@ -109,7 +116,7 @@ const armas = nombresArmas.map((nombreIngles) => {
   const maximo = w.stats(nivelMax, '+')
   const esPorcentaje = w.baseStatText?.endsWith('%')
 
-  historias[slug] = { descripcion: w.description, historia: w.story ?? '' }
+  detallesArmas[slug] = { efecto: extraerEfecto(w), descripcion: w.description, historia: w.story ?? '' }
 
   return {
     id: w.id,
@@ -125,7 +132,6 @@ const armas = nombresArmas.map((nombreIngles) => {
     stat: w.mainStatText
       ? { nombre: w.mainStatText, valores: [w.baseStatText, formatearStat(maximo.specialized, esPorcentaje)] }
       : null,
-    efecto: extraerEfecto(w),
     costesAscension: Object.keys(w.costs)
       .sort()
       .map((f) => compactar(w.costs[f])),
@@ -151,13 +157,13 @@ function dominiosDelSet(nombreSet) {
 }
 
 const PIEZAS = ['flower', 'plume', 'sands', 'goblet', 'circlet']
-const historiasArtefactos = {}
+const detallesArtefactos = {}
 const artefactos = genshindb.artifacts('names', { matchCategories: true }).map((nombreIngles) => {
   const s = genshindb.artifacts(nombreIngles, ES)
   const slug = aSlug(nombreIngles)
   const piezas = PIEZAS.filter((p) => s[p])
 
-  historiasArtefactos[slug] = piezas.map((p) => ({ descripcion: s[p].description, historia: s[p].story ?? '' }))
+  detallesArtefactos[slug] = { piezas: piezas.map((p) => ({ descripcion: s[p].description, historia: s[p].story ?? '' })) }
 
   return {
     id: s.id,
@@ -224,13 +230,21 @@ for (const m of todosLosMateriales) {
 const faltantes = [...idsUsados].filter((id) => !materiales[id])
 if (faltantes.length) throw new Error(`Materiales sin datos: ${faltantes.join(', ')}`)
 
+// Un archivo por slug; la carpeta se vacía antes para no dejar archivos de entradas que ya no existan
+function escribirDetalles(carpeta, detalles) {
+  rmSync(carpeta, { recursive: true, force: true })
+  mkdirSync(carpeta, { recursive: true })
+  for (const [slug, datos] of Object.entries(detalles)) writeFileSync(`${carpeta}/${slug}.json`, JSON.stringify(datos))
+}
+
 mkdirSync('src/data', { recursive: true })
 writeFileSync('src/data/personajes.json', JSON.stringify(personajes))
 writeFileSync('src/data/armas.json', JSON.stringify(armas))
-writeFileSync('src/data/armas-historias.json', JSON.stringify(historias))
 writeFileSync('src/data/artefactos.json', JSON.stringify(artefactos))
-writeFileSync('src/data/artefactos-historias.json', JSON.stringify(historiasArtefactos))
 writeFileSync('src/data/materiales.json', JSON.stringify(materiales))
+escribirDetalles('src/data/personajes', detallesPersonajes)
+escribirDetalles('src/data/armas', detallesArmas)
+escribirDetalles('src/data/artefactos', detallesArtefactos)
 console.log(
   `Listo: ${personajes.length} personajes, ${armas.length} armas, ${artefactos.length} sets de artefactos, ` +
     `${Object.keys(materiales).length} materiales ` +
