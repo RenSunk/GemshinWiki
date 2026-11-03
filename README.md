@@ -2,8 +2,8 @@
 
 https://genshin-wiki.vercel.app
 
-Enciclopedia de personajes, armas y artefactos, constructor de equipos y planificador de materiales de
-Genshin Impact, hecho por fans (React + Vite).
+Enciclopedia de personajes, armas y artefactos, constructor de equipos, simulador de gachapón y planificador
+de materiales de Genshin Impact, hecho por fans (React + Vite).
 
 ## Comandos
 
@@ -53,12 +53,23 @@ completo, como en el juego) y las reacciones posibles. Los personajes de element
 elegido en la URL (`aether.dendro`). Los efectos de las consonancias vienen de la wiki oficial de HoYoLAB
 y los nombres de las reacciones, de los textos del juego en español (`utils/equipos.js`).
 
+## Gachapón
+
+`#/gachapon` tiene un simulador (pity, 50/50 y Camino de la Epitomización, guardado en el navegador) y una
+calculadora exacta de la probabilidad de conseguir N copias con X tiradas (`utils/gacha.js`).
+
+- Probabilidades base y pity máximo: las oficiales del juego.
+- La subida de probabilidad en las últimas tiradas («pity suave») no es oficial; sus parámetros están
+  ajustados para reproducir las probabilidades totales oficiales: personaje 5★ 1,6% (modelo 1,61%) y
+  4★ 13% (13,06%); arma 5★ 1,85% (1,856%) y 4★ 14,5% (14,48%).
+- No se simula la «Captura radiante» (5.0+), porque sus probabilidades no son públicas.
+
 ## Estructura
 
 ```
 src/
   App.jsx                          navegación (#/, #/personaje/<slug>, #/armas, #/arma/<slug>,
-                                   #/artefactos, #/artefacto/<slug>, #/equipos/<slugs>, #/hoy,
+                                   #/artefactos, #/artefacto/<slug>, #/equipos/<slugs>, #/gachapon, #/hoy,
                                    #/planificador/<personaje|arma>/<slug>, #/importar/<datos>)
   components/Galeria.jsx           personajes: buscador y filtros
   components/GaleriaArmas.jsx      armas: buscador y filtros
@@ -70,6 +81,7 @@ src/
   components/Planificador.jsx      niveles objetivo de personajes y armas
   components/ListaMateriales.jsx   materiales agrupados con iconos (y campos "Tengo" en el planificador)
   components/Equipos.jsx           constructor de equipos
+  components/Gachapon.jsx          simulador de tiradas y calculadora de probabilidades
   components/Cargando.jsx          aviso mientras llegan los textos de una página de detalle
   components/Hoy.jsx               qué dominios hacer cada día
   components/Respaldo.jsx          exportar e importar el plan
@@ -79,6 +91,7 @@ src/
   hooks/useAlmacenado.js           useState que se guarda en localStorage
   hooks/useDetalle.js              descarga el archivo de textos de una página de detalle
   utils/equipos.js                 consonancias, reacciones y equipo en la URL
+  utils/gacha.js                   probabilidades, tirada simulada y cálculo exacto de copias
   utils/calculos.js                costes de ascensión, EXP, talentos, reparto del inventario y alquimia
   utils/hoy.js                     día del juego y materiales pendientes por dominio
   utils/respaldo.js                formato, validación y enlace de la copia de seguridad

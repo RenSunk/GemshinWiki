@@ -12,11 +12,12 @@ import Planificador from './components/Planificador.jsx'
 import Hoy from './components/Hoy.jsx'
 import ImportarEnlace from './components/ImportarEnlace.jsx'
 import Equipos from './components/Equipos.jsx'
+import Gachapon from './components/Gachapon.jsx'
 import { usePlanificador } from './hooks/usePlanificador.js'
 
 // Navegación sencilla con el hash de la URL:
 // #/, #/personaje/hu-tao, #/armas, #/arma/staff-of-homa, #/artefactos, #/artefacto/gladiators-finale,
-// #/equipos/hu-tao,xingqiu,…, #/hoy, #/planificador,
+// #/equipos/hu-tao,xingqiu,…, #/gachapon, #/hoy, #/planificador,
 // #/planificador/arma/staff-of-homa, #/importar/<copia del plan>
 function leerRuta() {
   const [, seccion = '', ...resto] = window.location.hash.split('/')
@@ -31,6 +32,7 @@ const MENU = [
   { href: '#/armas', texto: 'Armas', secciones: ['armas', 'arma'] },
   { href: '#/artefactos', texto: 'Artefactos', secciones: ['artefactos', 'artefacto'] },
   { href: '#/equipos', texto: 'Equipos', secciones: ['equipos'] },
+  { href: '#/gachapon', texto: 'Gachapón', secciones: ['gachapon'] },
   { href: '#/hoy', texto: 'Hoy', secciones: ['hoy'] },
   { href: '#/planificador', texto: 'Planificador', secciones: ['planificador', 'importar'] },
 ]
@@ -64,6 +66,8 @@ export default function App() {
     pagina = <GaleriaArtefactos artefactos={artefactos} />
   } else if (seccion === 'equipos') {
     pagina = <Equipos key={resto[0] ?? ''} personajes={personajes} textoInicial={resto[0]} />
+  } else if (seccion === 'gachapon') {
+    pagina = <Gachapon personajes={personajes} armas={armas} />
   } else if (seccion === 'hoy') {
     pagina = <Hoy personajes={personajes} armas={armas} planificador={planificador} />
   } else if (seccion === 'importar') {
